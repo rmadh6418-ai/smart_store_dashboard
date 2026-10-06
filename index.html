@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>스마트스토어 통합 관리 대시보드</title>
-    <!-- Chart.js 및 데이터 레이블 플러그인 추가 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <style>
@@ -17,37 +16,31 @@
         * { box-sizing: border-box; }
         body { font-family: 'Malgun Gothic', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; font-size: 14px; }
         
-        /* 로그인 화면 */
         #login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background-color: #2c3e50; color: white; padding: 20px; }
         #login-screen input { padding: 15px; margin: 10px 0; border: none; border-radius: 5px; width: 100%; max-width: 300px; font-size: 16px; }
         #login-screen button { padding: 15px 20px; background-color: var(--primary-color); border: none; border-radius: 5px; color: white; cursor: pointer; font-weight: bold; width: 100%; max-width: 300px; font-size: 16px; }
         
-        /* 대시보드 레이아웃 */
         #app-container { display: none; padding: 10px; max-width: 1400px; margin: 0 auto; }
         
         .header { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
         .header-title-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         .header h2 { margin: 0; font-size: 18px; }
         
-        .header-btns { display: flex; gap: 8px; }
+        .header-btns { display: flex; gap: 8px; align-items: center; }
+        #sync-status { font-size: 12px; font-weight: bold; color: #555; background: #e3f2fd; padding: 6px 10px; border-radius: 12px; border: 1px solid #bbdefb; }
         .btn-secondary { padding: 8px 12px; cursor: pointer; background: #e0e0e0; border: none; border-radius: 4px; font-size: 13px; font-weight: bold; color: #333; }
-        .btn-secondary:hover { background: #d0d0d0; }
         
-        /* 필터 컨트롤 */
         .filter-controls { display: flex; gap: 8px; flex-wrap: wrap; background: #fff; padding: 10px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .filter-controls select { flex: 1; min-width: 100px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-weight: bold; font-size: 14px; background-color: #fff; }
         
-        /* 모바일 스크롤 탭 */
         .nav-tabs-wrapper { width: 100%; overflow-x: auto; margin-bottom: 15px; -webkit-overflow-scrolling: touch; }
         .nav-tabs { display: flex; gap: 8px; min-width: max-content; padding-bottom: 5px; }
         .nav-tabs button { padding: 12px 15px; border: none; background-color: #e0e0e0; cursor: pointer; border-radius: 5px; font-weight: bold; font-size: 14px; white-space: nowrap; }
         .nav-tabs button.active { background-color: var(--primary-color); color: white; }
         
-        /* 탭 컨텐츠 */
         .tab-content { display: none; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .tab-content.active { display: block; }
         
-        /* 요약 카드 */
         .summary-section { margin-bottom: 20px; }
         .summary-section h3 { margin: 0 0 10px 0; font-size: 15px; color: #444; border-bottom: 2px solid #eee; padding-bottom: 8px; }
         .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 15px; }
@@ -55,7 +48,6 @@
         .card h4 { margin: 0 0 8px 0; color: #666; font-size: 12px; font-weight: normal; word-break: keep-all; }
         .card p { margin: 0; font-size: 18px; font-weight: bold; color: #2c3e50; word-break: break-all; }
         
-        /* 플랫폼별 요약 컬럼 */
         .platform-summary-section { display: grid; grid-template-columns: 1fr; gap: 15px; }
         @media (min-width: 768px) { .platform-summary-section { grid-template-columns: 1fr 1fr; } }
         .platform-column { background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #eee; }
@@ -64,80 +56,70 @@
         .platform-stats > div:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
         .platform-stats strong { font-size: 15px; color: #2c3e50; }
         
-        /* 차트 영역 */
         .charts-wrapper { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
         .charts-row { display: flex; flex-direction: column; gap: 15px; }
         @media (min-width: 768px) { .charts-row { flex-direction: row; } }
         .chart-container { flex: 1; width: 100%; height: 280px; background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #eee; }
         @media (min-width: 768px) { .chart-container { height: 350px; } }
         
-        /* 테이블 (모바일 대응) */
         .table-wrapper { width: 100%; overflow-x: auto; margin-top: 10px; -webkit-overflow-scrolling: touch; border: 1px solid #eee; border-radius: 4px; }
         table { width: 100%; min-width: 1000px; border-collapse: collapse; white-space: nowrap; font-size: 12px; }
         th, td { border: 1px solid var(--border-color); padding: 8px 6px; text-align: center; }
         th { background-color: #f8f9fa; font-weight: bold; position: sticky; top: 0; z-index: 10; }
         
-        /* 입력 폼 공통 */
         input[type="text"], input[type="number"], input[type="date"], select { 
             padding: 8px 4px; border: 1px solid #ccc; border-radius: 4px; width: 100%; min-width: 60px; font-size: 13px;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
+            -webkit-appearance: none; -moz-appearance: none; appearance: none;
         }
         
-        /* 상태 라벨 및 버튼 */
-        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
-        .status-soldout { background-color: #ffebee; color: #c62828; }
         .status-instock { background-color: #e8f5e9; color: #2e7d32; }
+        .status-soldout { background-color: #ffebee; color: #c62828; }
         
         .btn-add { background-color: #2196F3; color: white; border: none; padding: 12px 15px; border-radius: 5px; cursor: pointer; margin-bottom: 10px; width: 100%; font-size: 14px; font-weight: bold; }
         @media (min-width: 768px) { .btn-add { width: auto; } }
         .btn-delete { background-color: #f44336; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
         
         .notice-text { font-size: 11px; color: #888; display: block; margin-bottom: 10px; word-break: keep-all; }
+        
+        /* 로딩 화면 */
+        #loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #4CAF50; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <!-- 로그인 화면 -->
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <h3 style="color: #4CAF50;">데이터를 동기화 중입니다...</h3>
+    </div>
+
     <div id="login-screen">
         <h2>🔒 관리자 로그인</h2>
-        <p style="font-size: 12px; color: #aaa;" id="login-hint">비밀번호를 입력하세요. (초기: 0129)</p>
+        <p style="font-size: 12px; color: #aaa;">비밀번호를 입력하세요. (초기: 0129)</p>
         <input type="password" id="pwd-input" placeholder="비밀번호" onkeypress="if(event.keyCode==13) checkPassword()">
         <button onclick="checkPassword()">접속하기</button>
     </div>
 
-    <!-- 메인 앱 컨테이너 -->
     <div id="app-container">
-        
         <div class="header">
             <div class="header-title-container">
                 <h2>📦 통합 관리 대시보드</h2>
                 <div class="header-btns">
+                    <span id="sync-status">🟢 대기중</span>
                     <button class="btn-secondary" onclick="changePassword()">🔑 비밀번호 변경</button>
                     <button class="btn-secondary" onclick="logout()">로그아웃</button>
                 </div>
             </div>
             
-            <!-- 통합 필터 컨트롤 -->
             <div class="filter-controls">
-                <select id="yearFilter" onchange="renderAll()">
-                    <option value="all">전체 년도</option>
-                </select>
+                <select id="yearFilter" onchange="renderAll()"><option value="all">전체 년도</option></select>
                 <select id="monthFilter" onchange="renderAll()">
                     <option value="all">전체 월</option>
-                    <option value="01">1월</option>
-                    <option value="02">2월</option>
-                    <option value="03">3월</option>
-                    <option value="04">4월</option>
-                    <option value="05">5월</option>
-                    <option value="06">6월</option>
-                    <option value="07">7월</option>
-                    <option value="08">8월</option>
-                    <option value="09">9월</option>
-                    <option value="10">10월</option>
-                    <option value="11">11월</option>
-                    <option value="12">12월</option>
+                    <option value="01">1월</option> <option value="02">2월</option> <option value="03">3월</option>
+                    <option value="04">4월</option> <option value="05">5월</option> <option value="06">6월</option>
+                    <option value="07">7월</option> <option value="08">8월</option> <option value="09">9월</option>
+                    <option value="10">10월</option> <option value="11">11월</option> <option value="12">12월</option>
                 </select>
             </div>
         </div>
@@ -151,24 +133,14 @@
             </div>
         </div>
 
-        <!-- 1. 대시보드 탭 -->
+        <!-- 대시보드 탭 -->
         <div id="dashboard" class="tab-content active">
-            
             <div class="summary-section">
                 <h3 id="main-summary-title">통합 요약</h3>
                 <div class="summary-cards">
-                    <div class="card">
-                        <h4>총 예상 매출</h4>
-                        <p id="total-revenue">₩0</p>
-                    </div>
-                    <div class="card">
-                        <h4>총 예상 마진</h4>
-                        <p id="total-margin">₩0</p>
-                    </div>
-                    <div class="card">
-                        <h4>평균 마진율</h4>
-                        <p id="total-avg-margin-rate">0%</p>
-                    </div>
+                    <div class="card"><h4>총 예상 매출</h4><p id="total-revenue">₩0</p></div>
+                    <div class="card"><h4>총 예상 마진</h4><p id="total-margin">₩0</p></div>
+                    <div class="card"><h4>평균 마진율</h4><p id="total-avg-margin-rate">0%</p></div>
                 </div>
             </div>
 
@@ -191,44 +163,29 @@
                 </div>
             </div>
 
-            <!-- 그래프 영역 -->
             <div class="charts-wrapper">
-                <!-- 전체 통합 그래프 (맨 위에 크게 표시) -->
-                <div class="chart-container">
-                    <canvas id="combinedChart"></canvas>
-                </div>
-                <!-- 스토어 / 타사이트 분리 그래프 (나란히 표시) -->
+                <div class="chart-container"><canvas id="combinedChart"></canvas></div>
                 <div class="charts-row">
-                    <div class="chart-container">
-                        <canvas id="storeChart"></canvas>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="otherChart"></canvas>
-                    </div>
+                    <div class="chart-container"><canvas id="storeChart"></canvas></div>
+                    <div class="chart-container"><canvas id="otherChart"></canvas></div>
                 </div>
             </div>
         </div>
 
-        <!-- 2. 등록제품(스토어) 탭 -->
+        <!-- 스토어 제품 탭 -->
         <div id="products" class="tab-content">
             <button class="btn-add" onclick="addProduct()">+ 스토어 제품 추가</button>
-            <span class="notice-text">* 스토어 수수료율도 자유롭게 수정 가능합니다. (기본 2.73%)</span>
+            <span class="notice-text">* 추가 시 위 필터의 년/월이 기본 입력됩니다. 스토어 수수료율 수정 가능.</span>
             <div class="table-wrapper">
                 <table id="products-table">
                     <thead>
                         <tr>
-                            <th style="min-width: 60px;">상태</th>
-                            <th style="min-width: 120px;">판매일자</th>
-                            <th style="min-width: 100px;">상품번호</th>
-                            <th style="min-width: 120px;">제품명</th>
-                            <th style="min-width: 80px;">공급가</th>
-                            <th style="min-width: 80px;">매출액</th>
-                            <th style="min-width: 70px;">택배비</th>
-                            <th style="min-width: 60px;">수수료(%)</th>
-                            <th style="min-width: 70px;">수수료액</th>
-                            <th style="min-width: 80px;">마진</th>
-                            <th style="min-width: 60px;">마진율</th>
-                            <th style="min-width: 60px;">관리</th>
+                            <th style="min-width: 60px;">상태</th><th style="min-width: 120px;">판매일자</th>
+                            <th style="min-width: 100px;">상품번호</th><th style="min-width: 120px;">제품명</th>
+                            <th style="min-width: 80px;">공급가</th><th style="min-width: 80px;">매출액</th>
+                            <th style="min-width: 70px;">택배비</th><th style="min-width: 60px;">수수료(%)</th>
+                            <th style="min-width: 70px;">수수료액</th><th style="min-width: 80px;">마진</th>
+                            <th style="min-width: 60px;">마진율</th><th style="min-width: 60px;">관리</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -236,7 +193,7 @@
             </div>
         </div>
 
-        <!-- 3. 등록제품(타사이트) 탭 -->
+        <!-- 타사이트 제품 탭 -->
         <div id="other-products" class="tab-content">
             <button class="btn-add" onclick="addOtherProduct()">+ 타사이트 제품 추가</button>
             <span class="notice-text">* 수수료(%)는 각 플랫폼에 맞게 수정하세요.</span>
@@ -244,18 +201,12 @@
                 <table id="other-products-table">
                     <thead>
                         <tr>
-                            <th style="min-width: 60px;">상태</th>
-                            <th style="min-width: 120px;">판매일자</th>
-                            <th style="min-width: 100px;">상품번호</th>
-                            <th style="min-width: 120px;">제품명</th>
-                            <th style="min-width: 80px;">공급가</th>
-                            <th style="min-width: 80px;">매출액</th>
-                            <th style="min-width: 70px;">택배비</th>
-                            <th style="min-width: 60px;">수수료(%)</th>
-                            <th style="min-width: 70px;">수수료액</th>
-                            <th style="min-width: 80px;">마진</th>
-                            <th style="min-width: 60px;">마진율</th>
-                            <th style="min-width: 60px;">관리</th>
+                            <th style="min-width: 60px;">상태</th><th style="min-width: 120px;">판매일자</th>
+                            <th style="min-width: 100px;">상품번호</th><th style="min-width: 120px;">제품명</th>
+                            <th style="min-width: 80px;">공급가</th><th style="min-width: 80px;">매출액</th>
+                            <th style="min-width: 70px;">택배비</th><th style="min-width: 60px;">수수료(%)</th>
+                            <th style="min-width: 70px;">수수료액</th><th style="min-width: 80px;">마진</th>
+                            <th style="min-width: 60px;">마진율</th><th style="min-width: 60px;">관리</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -263,7 +214,7 @@
             </div>
         </div>
 
-        <!-- 4. 사입 탭 -->
+        <!-- 사입 내역 탭 -->
         <div id="sourcing" class="tab-content">
             <button class="btn-add" onclick="addSourcing()">+ 사입 내역 추가</button>
             <span class="notice-text">* 사입 내역은 대시보드 마진율과 별도로 기록됩니다.</span>
@@ -271,14 +222,10 @@
                 <table id="sourcing-table">
                     <thead>
                         <tr>
-                            <th style="min-width: 120px;">구매일</th>
-                            <th style="min-width: 100px;">업체</th>
-                            <th style="min-width: 120px;">상품명</th>
-                            <th style="min-width: 60px;">수량</th>
-                            <th style="min-width: 80px;">단가</th>
-                            <th style="min-width: 90px;">총 금액</th>
-                            <th style="min-width: 100px;">비고</th>
-                            <th style="min-width: 60px;">관리</th>
+                            <th style="min-width: 120px;">구매일</th><th style="min-width: 100px;">업체</th>
+                            <th style="min-width: 120px;">상품명</th><th style="min-width: 60px;">수량</th>
+                            <th style="min-width: 80px;">단가</th><th style="min-width: 90px;">총 금액</th>
+                            <th style="min-width: 100px;">비고</th><th style="min-width: 60px;">관리</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -288,18 +235,22 @@
     </div>
 
     <script>
-        // Chart.js 데이터 레이블 플러그인 글로벌 등록
+        // ==========================================
+        // 🔴 아래 쌍따옴표("") 안에 1단계에서 복사한 웹 앱 URL을 붙여넣으세요! 🔴
+        // ==========================================
+        const WEB_APP_URL = "여기에_URL을_붙여넣으세요";
+        // ==========================================
+
         Chart.register(ChartDataLabels);
 
-        let productsData = JSON.parse(localStorage.getItem('ss_products')) || [];
-        let otherProductsData = JSON.parse(localStorage.getItem('ss_other_products')) || [];
-        let sourcingData = JSON.parse(localStorage.getItem('ss_sourcing')) || [];
+        let productsData = [];
+        let otherProductsData = [];
+        let sourcingData = [];
         
         let combinedChartInstance = null;
         let storeChartInstance = null;
         let otherChartInstance = null;
 
-        // 비밀번호 비트 해시 생성 함수 (보안용)
         function generateHash(str) {
             let hash = 0;
             for (let i = 0; i < str.length; i++) {
@@ -309,48 +260,30 @@
             return hash.toString() + "_" + str.length;
         }
 
-        // 로그인
-        function checkPassword() {
+        async function checkPassword() {
             const pwd = document.getElementById('pwd-input').value;
-            // 로컬 스토리지에 저장된 해시가 없으면 '0129'의 해시를 기본값으로 사용
             const expectedHash = localStorage.getItem('ss_pwd_hash') || '1478664_4'; 
             
             if (generateHash(pwd) === expectedHash) { 
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('app-container').style.display = 'block';
-                populateYearFilter();
-                renderAll();
+                await loadDataFromCloud();
             } else {
                 alert('비밀번호가 틀렸습니다.');
             }
         }
 
-        // 비밀번호 변경 기능
         function changePassword() {
             const currentPwd = prompt("현재 비밀번호를 입력하세요.");
-            if (currentPwd === null) return; // 취소 누를 경우
-            
+            if (currentPwd === null) return; 
             const expectedHash = localStorage.getItem('ss_pwd_hash') || '1478664_4';
-            
             if (generateHash(currentPwd) !== expectedHash) {
-                alert("현재 비밀번호가 일치하지 않습니다.");
-                return;
+                alert("현재 비밀번호가 일치하지 않습니다."); return;
             }
-            
             const newPwd = prompt("새로운 비밀번호를 입력하세요.");
-            if (newPwd === null) return;
-            if (newPwd.trim() === "") {
-                alert("비밀번호는 공백일 수 없습니다.");
-                return;
-            }
-            
+            if (!newPwd || newPwd.trim() === "") { alert("올바른 비밀번호를 입력하세요."); return; }
             const confirmPwd = prompt("새로운 비밀번호를 한번 더 입력하세요.");
-            if (newPwd !== confirmPwd) {
-                alert("새 비밀번호가 일치하지 않습니다.");
-                return;
-            }
-            
-            // 새 비밀번호 해시 저장
+            if (newPwd !== confirmPwd) { alert("새 비밀번호가 일치하지 않습니다."); return; }
             localStorage.setItem('ss_pwd_hash', generateHash(newPwd));
             alert("비밀번호가 성공적으로 변경되었습니다.");
         }
@@ -368,87 +301,132 @@
             event.target.classList.add('active');
         }
 
-        function formatNumber(num) {
-            return Number(Math.round(num)).toLocaleString('ko-KR');
-        }
-        
+        function formatNumber(num) { return Number(Math.round(num)).toLocaleString('ko-KR'); }
         function getFilterSafeDate() {
-            const yearVal = document.getElementById('yearFilter').value;
-            const monthVal = document.getElementById('monthFilter').value;
-            const today = new Date();
-            
-            let y = yearVal !== 'all' ? yearVal : today.getFullYear().toString();
-            let m = monthVal !== 'all' ? monthVal : String(today.getMonth() + 1).padStart(2, '0');
-            let d = String(today.getDate()).padStart(2, '0');
+            const yv = document.getElementById('yearFilter').value, mv = document.getElementById('monthFilter').value;
+            const td = new Date();
+            let y = yv !== 'all' ? yv : td.getFullYear().toString();
+            let m = mv !== 'all' ? mv : String(td.getMonth() + 1).padStart(2, '0');
+            let d = String(td.getDate()).padStart(2, '0');
             return `${y}-${m}-${d}`;
+        }
+
+        // --- 구글 시트 동기화 로직 ---
+        async function loadDataFromCloud() {
+            if (WEB_APP_URL === "여기에_URL을_붙여넣으세요" || !WEB_APP_URL) {
+                document.getElementById('sync-status').innerText = '📴 로컬 모드';
+                document.getElementById('sync-status').style.backgroundColor = '#f5f5f5';
+                productsData = JSON.parse(localStorage.getItem('ss_products')) || [];
+                otherProductsData = JSON.parse(localStorage.getItem('ss_other_products')) || [];
+                sourcingData = JSON.parse(localStorage.getItem('ss_sourcing')) || [];
+                populateYearFilter(); renderAll();
+                return;
+            }
+
+            document.getElementById('loading-overlay').style.display = 'flex';
+            try {
+                const res = await fetch(WEB_APP_URL);
+                const data = await res.json();
+                
+                // 기존 기기에 저장된 데이터가 있고, 구글 시트가 텅 비었을 때 최초 1회 업로드 마이그레이션
+                const localProducts = JSON.parse(localStorage.getItem('ss_products')) || [];
+                if ((!data.products || data.products.length === 0) && localProducts.length > 0) {
+                    productsData = localProducts;
+                    otherProductsData = JSON.parse(localStorage.getItem('ss_other_products')) || [];
+                    sourcingData = JSON.parse(localStorage.getItem('ss_sourcing')) || [];
+                    saveDataToCloud(true); // 강제 즉시 동기화
+                } else {
+                    productsData = data.products || [];
+                    otherProductsData = data.otherProducts || [];
+                    sourcingData = data.sourcing || [];
+                }
+                document.getElementById('sync-status').innerText = '🟢 시트 연동 됨';
+                document.getElementById('sync-status').style.backgroundColor = '#e8f5e9';
+            } catch (e) {
+                document.getElementById('sync-status').innerText = '🔴 연동 실패';
+                document.getElementById('sync-status').style.backgroundColor = '#ffebee';
+            }
+            document.getElementById('loading-overlay').style.display = 'none';
+            populateYearFilter(); renderAll();
+        }
+
+        let saveTimeout = null;
+        function saveDataToCloud(immediate = false) {
+            if (WEB_APP_URL === "https://script.google.com/macros/s/AKfycbwM5GU7oIbP0eUbDmaekKi6cFS9o2OcQ0AJTA0H6K_vcvDBrTdXOhWZSOJZ6U5JJ-I/exec" || !WEB_APP_URL) {
+                localStorage.setItem('ss_products', JSON.stringify(productsData));
+                localStorage.setItem('ss_other_products', JSON.stringify(otherProductsData));
+                localStorage.setItem('ss_sourcing', JSON.stringify(sourcingData));
+                return;
+            }
+
+            document.getElementById('sync-status').innerText = '🟡 저장 중...';
+            document.getElementById('sync-status').style.backgroundColor = '#fff3e0';
+            
+            clearTimeout(saveTimeout);
+            const executeSave = async () => {
+                try {
+                    const payload = { products: productsData, otherProducts: otherProductsData, sourcing: sourcingData };
+                    await fetch(WEB_APP_URL, {
+                        method: 'POST',
+                        body: JSON.stringify(payload),
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                    });
+                    document.getElementById('sync-status').innerText = '🟢 구글 시트 연동 됨';
+                    document.getElementById('sync-status').style.backgroundColor = '#e8f5e9';
+                } catch(e) {
+                    document.getElementById('sync-status').innerText = '🔴 저장 실패';
+                    document.getElementById('sync-status').style.backgroundColor = '#ffebee';
+                }
+            };
+
+            if (immediate) executeSave();
+            else saveTimeout = setTimeout(executeSave, 1500); // 1.5초 후 자동 동기화 (트래픽 방지)
         }
 
         function populateYearFilter() {
             const years = new Set();
-            const currentYear = new Date().getFullYear().toString();
-            years.add(currentYear);
+            years.add(new Date().getFullYear().toString());
+            const extY = (d) => d ? d.substring(0, 4) : null;
+            productsData.forEach(i => { if(extY(i.salesDate)) years.add(extY(i.salesDate)); });
+            otherProductsData.forEach(i => { if(extY(i.salesDate)) years.add(extY(i.salesDate)); });
+            sourcingData.forEach(i => { if(extY(i.date)) years.add(extY(i.date)); });
             
-            const extractYear = (dateStr) => dateStr ? dateStr.substring(0, 4) : null;
-            
-            productsData.forEach(item => { if(extractYear(item.salesDate)) years.add(extractYear(item.salesDate)); });
-            otherProductsData.forEach(item => { if(extractYear(item.salesDate)) years.add(extractYear(item.salesDate)); });
-            sourcingData.forEach(item => { if(extractYear(item.date)) years.add(extractYear(item.date)); });
-            
-            const filterSelect = document.getElementById('yearFilter');
-            const currentValue = filterSelect.value || 'all';
-            
-            filterSelect.innerHTML = '<option value="all">전체 년도</option>';
-            Array.from(years).sort().reverse().forEach(year => {
-                filterSelect.innerHTML += `<option value="${year}">${year}년</option>`;
-            });
-            filterSelect.value = currentValue === '' ? 'all' : currentValue;
+            const fs = document.getElementById('yearFilter');
+            const curVal = fs.value || 'all';
+            fs.innerHTML = '<option value="all">전체 년도</option>';
+            Array.from(years).sort().reverse().forEach(y => fs.innerHTML += `<option value="${y}">${y}년</option>`);
+            fs.value = curVal === '' ? 'all' : curVal;
         }
 
         function checkDateFilter(dateString) {
-            const yearVal = document.getElementById('yearFilter').value;
-            const monthVal = document.getElementById('monthFilter').value;
-
-            if (yearVal === 'all' && monthVal === 'all') return true;
+            const yv = document.getElementById('yearFilter').value, mv = document.getElementById('monthFilter').value;
+            if (yv === 'all' && mv === 'all') return true;
             if (!dateString) return false;
-
-            const y = dateString.substring(0, 4);
-            const m = dateString.substring(5, 7);
-
-            if (yearVal !== 'all' && y !== yearVal) return false;
-            if (monthVal !== 'all' && m !== monthVal) return false;
+            const y = dateString.substring(0, 4), m = dateString.substring(5, 7);
+            if (yv !== 'all' && y !== yv) return false;
+            if (mv !== 'all' && m !== mv) return false;
             return true;
         }
 
         function renderAll() {
-            renderProducts();
-            renderOtherProducts();
-            renderSourcing();
-            updateDashboard();
+            renderProducts(); renderOtherProducts(); renderSourcing(); updateDashboard();
         }
 
-        // 공통 업데이트 헬퍼
         function updateCell(arrayName, index, key, inputObj) {
             let val = inputObj.value;
             if(inputObj.type === 'number') val = Number(val);
-            
             if(arrayName === 'products') productsData[index][key] = val;
             else if(arrayName === 'other') otherProductsData[index][key] = val;
             else if(arrayName === 'sourcing') sourcingData[index][key] = val;
-            
-            saveData();
-            renderAll();
+            saveDataToCloud(); renderAll();
         }
 
-        // 스토어 제품 렌더링
         function renderProducts() {
             const tbody = document.querySelector('#products-table tbody');
             tbody.innerHTML = '';
             productsData.forEach((item, index) => {
                 if (!checkDateFilter(item.salesDate)) return;
-                
-                const buyPrice = Number(item.buyPrice) || 0;
-                const sellPrice = Number(item.sellPrice) || 0;
-                const shipping = Number(item.shipping) || 0;
+                const buyPrice = Number(item.buyPrice) || 0, sellPrice = Number(item.sellPrice) || 0, shipping = Number(item.shipping) || 0;
                 const commRate = item.commRate !== undefined ? Number(item.commRate) : 2.73;
                 const commission = sellPrice * (commRate / 100);
                 const margin = sellPrice - buyPrice - shipping - commission;
@@ -457,12 +435,8 @@
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>
-                        <select onchange="updateCell('products', ${index}, 'status', this)" style="border:none; background:transparent;" class="${statusClass}">
-                            <option value="재고" ${item.status === '재고' ? 'selected' : ''}>재고</option>
-                            <option value="품절" ${item.status === '품절' ? 'selected' : ''}>품절</option>
-                        </select>
-                    </td>
+                    <td><select onchange="updateCell('products', ${index}, 'status', this)" style="border:none; background:transparent;" class="${statusClass}">
+                        <option value="재고" ${item.status === '재고' ? 'selected' : ''}>재고</option><option value="품절" ${item.status === '품절' ? 'selected' : ''}>품절</option></select></td>
                     <td><input type="date" value="${item.salesDate || ''}" onchange="updateCell('products', ${index}, 'salesDate', this)"></td>
                     <td><input type="text" value="${item.id}" onchange="updateCell('products', ${index}, 'id', this)"></td>
                     <td><input type="text" value="${item.name}" onchange="updateCell('products', ${index}, 'name', this)"></td>
@@ -473,24 +447,19 @@
                     <td style="color:#666; font-size:11px;">₩${formatNumber(commission)}</td>
                     <td style="font-weight:bold; color:${margin > 0 ? 'var(--primary-color)' : '#f44336'};">₩${formatNumber(margin)}</td>
                     <td style="font-weight:bold; color:${marginRate > 30 ? 'var(--primary-color)' : (marginRate > 0 ? 'orange' : '#f44336')};">${marginRate.toFixed(1)}%</td>
-                    <td><button class="btn-delete" onclick="deleteProduct(${index})">삭제</button></td>
-                `;
+                    <td><button class="btn-delete" onclick="deleteProduct(${index})">삭제</button></td>`;
                 tbody.appendChild(tr);
             });
         }
-        function addProduct() { productsData.push({ status: '재고', salesDate: getFilterSafeDate(), id: '', name: '새 상품', buyPrice: 0, sellPrice: 0, shipping: 3000, commRate: 2.73 }); populateYearFilter(); renderAll(); }
-        function deleteProduct(index) { if(confirm('삭제하시겠습니까?')) { productsData.splice(index, 1); saveData(); renderAll(); } }
+        function addProduct() { productsData.push({ status: '재고', salesDate: getFilterSafeDate(), id: '', name: '새 상품', buyPrice: 0, sellPrice: 0, shipping: 3000, commRate: 2.73 }); populateYearFilter(); saveDataToCloud(); renderAll(); }
+        function deleteProduct(index) { if(confirm('삭제하시겠습니까?')) { productsData.splice(index, 1); saveDataToCloud(); renderAll(); } }
 
-        // 타사이트 제품 렌더링
         function renderOtherProducts() {
             const tbody = document.querySelector('#other-products-table tbody');
             tbody.innerHTML = '';
             otherProductsData.forEach((item, index) => {
                 if (!checkDateFilter(item.salesDate)) return;
-                
-                const buyPrice = Number(item.buyPrice) || 0;
-                const sellPrice = Number(item.sellPrice) || 0;
-                const shipping = Number(item.shipping) || 0;
+                const buyPrice = Number(item.buyPrice) || 0, sellPrice = Number(item.sellPrice) || 0, shipping = Number(item.shipping) || 0;
                 const commRate = item.commRate !== undefined ? Number(item.commRate) : 2.73;
                 const commission = sellPrice * (commRate / 100);
                 const margin = sellPrice - buyPrice - shipping - commission;
@@ -499,12 +468,8 @@
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>
-                        <select onchange="updateCell('other', ${index}, 'status', this)" style="border:none; background:transparent;" class="${statusClass}">
-                            <option value="재고" ${item.status === '재고' ? 'selected' : ''}>재고</option>
-                            <option value="품절" ${item.status === '품절' ? 'selected' : ''}>품절</option>
-                        </select>
-                    </td>
+                    <td><select onchange="updateCell('other', ${index}, 'status', this)" style="border:none; background:transparent;" class="${statusClass}">
+                        <option value="재고" ${item.status === '재고' ? 'selected' : ''}>재고</option><option value="품절" ${item.status === '품절' ? 'selected' : ''}>품절</option></select></td>
                     <td><input type="date" value="${item.salesDate || ''}" onchange="updateCell('other', ${index}, 'salesDate', this)"></td>
                     <td><input type="text" value="${item.id}" onchange="updateCell('other', ${index}, 'id', this)"></td>
                     <td><input type="text" value="${item.name}" onchange="updateCell('other', ${index}, 'name', this)"></td>
@@ -515,23 +480,19 @@
                     <td style="color:#666; font-size:11px;">₩${formatNumber(commission)}</td>
                     <td style="font-weight:bold; color:${margin > 0 ? 'var(--primary-color)' : '#f44336'};">₩${formatNumber(margin)}</td>
                     <td style="font-weight:bold; color:${marginRate > 30 ? 'var(--primary-color)' : (marginRate > 0 ? 'orange' : '#f44336')};">${marginRate.toFixed(1)}%</td>
-                    <td><button class="btn-delete" onclick="deleteOtherProduct(${index})">삭제</button></td>
-                `;
+                    <td><button class="btn-delete" onclick="deleteOtherProduct(${index})">삭제</button></td>`;
                 tbody.appendChild(tr);
             });
         }
-        function addOtherProduct() { otherProductsData.push({ status: '재고', salesDate: getFilterSafeDate(), id: '', name: '새 상품', buyPrice: 0, sellPrice: 0, shipping: 3000, commRate: 2.73 }); populateYearFilter(); renderAll(); }
-        function deleteOtherProduct(index) { if(confirm('삭제하시겠습니까?')) { otherProductsData.splice(index, 1); saveData(); renderAll(); } }
+        function addOtherProduct() { otherProductsData.push({ status: '재고', salesDate: getFilterSafeDate(), id: '', name: '새 상품', buyPrice: 0, sellPrice: 0, shipping: 3000, commRate: 2.73 }); populateYearFilter(); saveDataToCloud(); renderAll(); }
+        function deleteOtherProduct(index) { if(confirm('삭제하시겠습니까?')) { otherProductsData.splice(index, 1); saveDataToCloud(); renderAll(); } }
 
         function renderSourcing() {
             const tbody = document.querySelector('#sourcing-table tbody');
             tbody.innerHTML = '';
             sourcingData.forEach((item, index) => {
                 if (!checkDateFilter(item.date)) return;
-                const qty = Number(item.qty) || 0;
-                const unitPrice = Number(item.unitPrice) || 0;
-                const total = qty * unitPrice;
-
+                const qty = Number(item.qty) || 0, unitPrice = Number(item.unitPrice) || 0, total = qty * unitPrice;
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td><input type="date" value="${item.date}" onchange="updateCell('sourcing', ${index}, 'date', this)"></td>
@@ -541,30 +502,18 @@
                     <td><input type="number" value="${unitPrice}" onchange="updateCell('sourcing', ${index}, 'unitPrice', this)"></td>
                     <td style="font-weight:bold;">₩${formatNumber(total)}</td>
                     <td><input type="text" value="${item.note}" onchange="updateCell('sourcing', ${index}, 'note', this)"></td>
-                    <td><button class="btn-delete" onclick="deleteSourcing(${index})">삭제</button></td>
-                `;
+                    <td><button class="btn-delete" onclick="deleteSourcing(${index})">삭제</button></td>`;
                 tbody.appendChild(tr);
             });
         }
-        function addSourcing() { sourcingData.push({ date: getFilterSafeDate(), vendor: '', name: '새 사입품', qty: 1, unitPrice: 0, note: '' }); populateYearFilter(); renderAll(); }
-        function deleteSourcing(index) { if(confirm('삭제하시겠습니까?')) { sourcingData.splice(index, 1); saveData(); renderAll(); } }
-
-        function saveData() {
-            localStorage.setItem('ss_products', JSON.stringify(productsData));
-            localStorage.setItem('ss_other_products', JSON.stringify(otherProductsData));
-            localStorage.setItem('ss_sourcing', JSON.stringify(sourcingData));
-        }
+        function addSourcing() { sourcingData.push({ date: getFilterSafeDate(), vendor: '', name: '새 사입품', qty: 1, unitPrice: 0, note: '' }); populateYearFilter(); saveDataToCloud(); renderAll(); }
+        function deleteSourcing(index) { if(confirm('삭제하시겠습니까?')) { sourcingData.splice(index, 1); saveDataToCloud(); renderAll(); } }
 
         function updateDashboard() {
-            const yearVal = document.getElementById('yearFilter').value;
-            const monthVal = document.getElementById('monthFilter').value;
+            const yearVal = document.getElementById('yearFilter').value, monthVal = document.getElementById('monthFilter').value;
             const isYearGrouping = (yearVal === 'all'); 
-
-            let storeTotalRev = 0, storeTotalMarg = 0;
-            let otherTotalRev = 0, otherTotalMarg = 0;
-
-            let storeAgg = {}; let otherAgg = {};
-            let chartLabels = [];
+            let storeTotalRev = 0, storeTotalMarg = 0, otherTotalRev = 0, otherTotalMarg = 0;
+            let storeAgg = {}, otherAgg = {}, chartLabels = [];
 
             if (isYearGrouping) {
                 let years = new Set();
@@ -577,55 +526,33 @@
                 chartLabels.forEach(m => { storeAgg[m] = { rev: 0, marg: 0 }; otherAgg[m] = { rev: 0, marg: 0 }; });
             }
 
-            productsData.forEach(item => {
-                if(!item.salesDate) return;
-                const y = item.salesDate.substring(0, 4);
-                const m = item.salesDate.substring(5, 7);
+            const processData = (arr, isStore) => {
+                arr.forEach(item => {
+                    if(!item.salesDate) return;
+                    const y = item.salesDate.substring(0, 4), m = item.salesDate.substring(5, 7);
+                    const matchYear = (yearVal === 'all' || y === yearVal), matchMonth = (monthVal === 'all' || m === monthVal);
+                    const sell = Number(item.sellPrice) || 0, buy = Number(item.buyPrice) || 0, ship = Number(item.shipping) || 0;
+                    const commRate = item.commRate !== undefined ? Number(item.commRate) : 2.73;
+                    const comm = sell * (commRate / 100), margin = sell > 0 ? (sell - buy - ship - comm) : 0;
 
-                const matchYear = (yearVal === 'all' || y === yearVal);
-                const matchMonth = (monthVal === 'all' || m === monthVal);
-
-                const sell = Number(item.sellPrice) || 0;
-                const buy = Number(item.buyPrice) || 0;
-                const ship = Number(item.shipping) || 0;
-                const commRate = item.commRate !== undefined ? Number(item.commRate) : 2.73;
-                const comm = sell * (commRate / 100);
-                const margin = sell > 0 ? (sell - buy - ship - comm) : 0;
-
-                if (sell > 0 && !item.name.includes('새 상품')) {
-                    if (matchYear && matchMonth) { storeTotalRev += sell; storeTotalMarg += margin; }
-                    if (matchYear) {
-                        const aggKey = isYearGrouping ? y : m;
-                        if(storeAgg[aggKey]) { storeAgg[aggKey].rev += sell; storeAgg[aggKey].marg += margin; }
+                    if (sell > 0 && !item.name.includes('새 상품')) {
+                        if (matchYear && matchMonth) { 
+                            if(isStore) { storeTotalRev += sell; storeTotalMarg += margin; } 
+                            else { otherTotalRev += sell; otherTotalMarg += margin; }
+                        }
+                        if (matchYear) {
+                            const aggKey = isYearGrouping ? y : m;
+                            if(isStore && storeAgg[aggKey]) { storeAgg[aggKey].rev += sell; storeAgg[aggKey].marg += margin; }
+                            else if(!isStore && otherAgg[aggKey]) { otherAgg[aggKey].rev += sell; otherAgg[aggKey].marg += margin; }
+                        }
                     }
-                }
-            });
+                });
+            };
 
-            otherProductsData.forEach(item => {
-                if(!item.salesDate) return;
-                const y = item.salesDate.substring(0, 4);
-                const m = item.salesDate.substring(5, 7);
-                const matchYear = (yearVal === 'all' || y === yearVal);
-                const matchMonth = (monthVal === 'all' || m === monthVal);
+            processData(productsData, true);
+            processData(otherProductsData, false);
 
-                const sell = Number(item.sellPrice) || 0;
-                const buy = Number(item.buyPrice) || 0;
-                const ship = Number(item.shipping) || 0;
-                const commRate = item.commRate !== undefined ? Number(item.commRate) : 2.73;
-                const comm = sell * (commRate / 100);
-                const margin = sell > 0 ? (sell - buy - ship - comm) : 0;
-
-                if (sell > 0 && !item.name.includes('새 상품')) {
-                    if (matchYear && matchMonth) { otherTotalRev += sell; otherTotalMarg += margin; }
-                    if (matchYear) {
-                        const aggKey = isYearGrouping ? y : m;
-                        if(otherAgg[aggKey]) { otherAgg[aggKey].rev += sell; otherAgg[aggKey].marg += margin; }
-                    }
-                }
-            });
-
-            const totalRev = storeTotalRev + otherTotalRev;
-            const totalMarg = storeTotalMarg + otherTotalMarg;
+            const totalRev = storeTotalRev + otherTotalRev, totalMarg = storeTotalMarg + otherTotalMarg;
             const totalRate = totalRev > 0 ? (totalMarg / totalRev) * 100 : 0;
             const storeRate = storeTotalRev > 0 ? (storeTotalMarg / storeTotalRev) * 100 : 0;
             const otherRate = otherTotalRev > 0 ? (otherTotalMarg / otherTotalRev) * 100 : 0;
@@ -634,125 +561,51 @@
             if (yearVal !== 'all' && monthVal === 'all') titleText = `${yearVal}년 통합 요약`;
             else if (yearVal !== 'all' && monthVal !== 'all') titleText = `${yearVal}년 ${parseInt(monthVal)}월 통합 요약`;
             else if (yearVal === 'all' && monthVal !== 'all') titleText = `전체 년도 ${parseInt(monthVal)}월 통합 요약`;
+            
             document.getElementById('main-summary-title').innerText = titleText;
-
             document.getElementById('total-revenue').innerText = `₩${formatNumber(totalRev)}`;
             document.getElementById('total-margin').innerText = `₩${formatNumber(totalMarg)}`;
             document.getElementById('total-avg-margin-rate').innerText = `${totalRate.toFixed(1)}%`;
-
             document.getElementById('store-summary-rev').innerText = `₩${formatNumber(storeTotalRev)}`;
             document.getElementById('store-summary-marg').innerText = `₩${formatNumber(storeTotalMarg)}`;
             document.getElementById('store-summary-rate').innerText = `${storeRate.toFixed(1)}%`;
-
             document.getElementById('other-summary-rev').innerText = `₩${formatNumber(otherTotalRev)}`;
             document.getElementById('other-summary-marg').innerText = `₩${formatNumber(otherTotalMarg)}`;
             document.getElementById('other-summary-rate').innerText = `${otherRate.toFixed(1)}%`;
 
             const displayLabels = chartLabels.map(val => isYearGrouping ? `${val}년` : `${parseInt(val)}월`);
-            
-            const storeRevArr = chartLabels.map(k => storeAgg[k].rev);
-            const storeMargArr = chartLabels.map(k => storeAgg[k].marg);
-            const otherRevArr = chartLabels.map(k => otherAgg[k].rev);
-            const otherMargArr = chartLabels.map(k => otherAgg[k].marg);
-            
-            // 통합 차트용 데이터 합산
-            const combinedRevArr = storeRevArr.map((val, idx) => val + otherRevArr[idx]);
-            const combinedMargArr = storeMargArr.map((val, idx) => val + otherMargArr[idx]);
-
+            const storeRevArr = chartLabels.map(k => storeAgg[k].rev), storeMargArr = chartLabels.map(k => storeAgg[k].marg);
+            const otherRevArr = chartLabels.map(k => otherAgg[k].rev), otherMargArr = chartLabels.map(k => otherAgg[k].marg);
+            const combinedRevArr = storeRevArr.map((v, i) => v + otherRevArr[i]), combinedMargArr = storeMargArr.map((v, i) => v + otherMargArr[i]);
             const chartTitleSuffix = isYearGrouping ? '(년도별 종합)' : `(${yearVal}년 월별 종합)`;
 
             const isMobile = window.innerWidth < 768;
-            const titleFontSize = isMobile ? 12 : 14;
-            const labelFontSize = isMobile ? 9 : 11;
-
             Chart.defaults.font.size = isMobile ? 10 : 12;
-            
-            // 데이터 레이블 옵션 공통 설정
-            const dataLabelsConfig = {
-                color: '#444',
-                anchor: 'end',
-                align: 'top',
-                font: { size: labelFontSize, weight: 'bold' },
-                formatter: function(value) {
-                    return value > 0 ? formatNumber(value) : '';
-                }
-            };
+            const dataLabelsConfig = { color: '#444', anchor: 'end', align: 'top', font: { size: isMobile ? 9 : 11, weight: 'bold' }, formatter: (v) => v > 0 ? formatNumber(v) : '' };
 
-            // 1. 전체 통합 차트 (보라색/주황색 테마)
-            const combinedCtx = document.getElementById('combinedChart').getContext('2d');
             if(combinedChartInstance) combinedChartInstance.destroy();
-            combinedChartInstance = new Chart(combinedCtx, {
+            combinedChartInstance = new Chart(document.getElementById('combinedChart').getContext('2d'), {
                 type: 'bar',
-                data: {
-                    labels: displayLabels,
-                    datasets: [
-                        { label: '통합 예상 마진', data: combinedMargArr, backgroundColor: '#9C27B0', borderRadius: 4 },
-                        { label: '통합 예상 매출', data: combinedRevArr, backgroundColor: '#CE93D8', borderRadius: 4 }
-                    ]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    layout: { padding: { top: 25 } }, 
-                    plugins: { 
-                        legend: { position: 'top', labels: { boxWidth: 12 } }, 
-                        title: { display: true, text: `전체 통합 현황 ${chartTitleSuffix}`, font: { size: titleFontSize + 2 } },
-                        datalabels: dataLabelsConfig
-                    }
-                }
+                data: { labels: displayLabels, datasets: [{ label: '통합 예상 마진', data: combinedMargArr, backgroundColor: '#9C27B0', borderRadius: 4 }, { label: '통합 예상 매출', data: combinedRevArr, backgroundColor: '#CE93D8', borderRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 25 } }, plugins: { legend: { position: 'top', labels: { boxWidth: 12 } }, title: { display: true, text: `전체 통합 현황 ${chartTitleSuffix}`, font: { size: isMobile ? 14 : 16 } }, datalabels: dataLabelsConfig } }
             });
 
-            // 2. 스토어 차트
-            const storeCtx = document.getElementById('storeChart').getContext('2d');
             if(storeChartInstance) storeChartInstance.destroy();
-            storeChartInstance = new Chart(storeCtx, {
+            storeChartInstance = new Chart(document.getElementById('storeChart').getContext('2d'), {
                 type: 'bar',
-                data: {
-                    labels: displayLabels,
-                    datasets: [
-                        { label: '스토어 예상 마진', data: storeMargArr, backgroundColor: '#4CAF50', borderRadius: 4 },
-                        { label: '스토어 예상 매출', data: storeRevArr, backgroundColor: '#81C784', borderRadius: 4 }
-                    ]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    layout: { padding: { top: 25 } }, 
-                    plugins: { 
-                        legend: { position: 'top', labels: { boxWidth: 12 } }, 
-                        title: { display: true, text: `스마트스토어 ${chartTitleSuffix}`, font: { size: titleFontSize } },
-                        datalabels: dataLabelsConfig
-                    }
-                }
+                data: { labels: displayLabels, datasets: [{ label: '스토어 예상 마진', data: storeMargArr, backgroundColor: '#4CAF50', borderRadius: 4 }, { label: '스토어 예상 매출', data: storeRevArr, backgroundColor: '#81C784', borderRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 25 } }, plugins: { legend: { position: 'top', labels: { boxWidth: 12 } }, title: { display: true, text: `스마트스토어 ${chartTitleSuffix}`, font: { size: isMobile ? 12 : 14 } }, datalabels: dataLabelsConfig } }
             });
 
-            // 3. 타사이트 차트
-            const otherCtx = document.getElementById('otherChart').getContext('2d');
             if(otherChartInstance) otherChartInstance.destroy();
-            otherChartInstance = new Chart(otherCtx, {
+            otherChartInstance = new Chart(document.getElementById('otherChart').getContext('2d'), {
                 type: 'bar',
-                data: {
-                    labels: displayLabels,
-                    datasets: [
-                        { label: '타사이트 예상 마진', data: otherMargArr, backgroundColor: '#2196F3', borderRadius: 4 },
-                        { label: '타사이트 예상 매출', data: otherRevArr, backgroundColor: '#64B5F6', borderRadius: 4 }
-                    ]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    layout: { padding: { top: 25 } }, 
-                    plugins: { 
-                        legend: { position: 'top', labels: { boxWidth: 12 } }, 
-                        title: { display: true, text: `타사이트 ${chartTitleSuffix}`, font: { size: titleFontSize } },
-                        datalabels: dataLabelsConfig
-                    }
-                }
+                data: { labels: displayLabels, datasets: [{ label: '타사이트 예상 마진', data: otherMargArr, backgroundColor: '#2196F3', borderRadius: 4 }, { label: '타사이트 예상 매출', data: otherRevArr, backgroundColor: '#64B5F6', borderRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 25 } }, plugins: { legend: { position: 'top', labels: { boxWidth: 12 } }, title: { display: true, text: `타사이트 ${chartTitleSuffix}`, font: { size: isMobile ? 12 : 14 } }, datalabels: dataLabelsConfig } }
             });
         }
 
-        window.addEventListener('resize', () => {
-            if(document.getElementById('dashboard').classList.contains('active')){
-                updateDashboard();
-            }
-        });
+        window.addEventListener('resize', () => { if(document.getElementById('dashboard').classList.contains('active')) updateDashboard(); });
     </script>
 </body>
 </html>
