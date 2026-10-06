@@ -325,7 +325,7 @@
 
             document.getElementById('loading-overlay').style.display = 'flex';
             try {
-                const res = await fetch(WEB_APP_URL);
+                const res = await fetch(WEB_APP_URL + '?action=get');
                 const data = await res.json();
                 
                 // 기존 기기에 저장된 데이터가 있고, 구글 시트가 텅 비었을 때 최초 1회 업로드 마이그레이션
@@ -352,7 +352,7 @@
 
         let saveTimeout = null;
         function saveDataToCloud(immediate = false) {
-            if (WEB_APP_URL === "https://script.google.com/macros/s/AKfycbzKVDkZ0YaXtDy1do0SqyPXWs7fVZYLf9BxFHTq1brCaTOxcrYs-T7gi3ML2N61pSj7/exec" || !WEB_APP_URL) {
+            if (WEB_APP_URL === "https://script.google.com/macros/s/AKfycbyLYURvTd_JDUZ4Pcl6I16UOExk4kkNftLgVyKozTCXnpNBZhV97fil8_aHS4MpwczU/exec" || !WEB_APP_URL) {
                 localStorage.setItem('ss_products', JSON.stringify(productsData));
                 localStorage.setItem('ss_other_products', JSON.stringify(otherProductsData));
                 localStorage.setItem('ss_sourcing', JSON.stringify(sourcingData));
