@@ -533,4 +533,136 @@
                 const comm = sell * STORE_COMMISSION_RATE;
                 const margin = sell > 0 ? (sell - buy - ship - comm) : 0;
 
-                if (sell > 0 && !item.name
+                if (sell > 0 && !item.name.includes('새 상품')) {
+                    if (matchYear && matchMonth) { storeTotalRev += sell; storeTotalMarg += margin; }
+                    if (matchYear) {
+                        const aggKey = isYearGrouping ? y : m;
+                        if(storeAgg[aggKey]) { storeAgg[aggKey].rev += sell; storeAgg[aggKey].marg += margin; }
+                    }
+                }
+            });
+
+            otherProductsData.forEach(item => {
+                if(!item.salesDate) return;
+                const y = item.salesDate.substring(0, 4);
+                const m = item.salesDate.substring(5, 7);
+                const matchYear = (yearVal === 'all' || y === yearVal);
+                const matchMonth = (monthVal === 'all' || m === monthVal);
+
+                const sell = Number(item.sellPrice) || 0;
+                const buy = Number(item.buyPrice) || 0;
+                const ship = Number(item.shipping) || 0;
+                const commRate = Number(item.commRate) || 2.73;
+                const comm = sell * (commRate / 100);
+                const margin = sell > 0 ? (sell - buy - ship - comm) : 0;
+
+                if (sell > 0 && !item.name.includes('새 상품')) {
+                    if (matchYear && matchMonth) { otherTotalRev += sell; otherTotalMarg += margin; }
+                    if (matchYear) {
+                        const aggKey = isYearGrouping ? y : m;
+                        if(otherAgg[aggKey]) { otherAgg[aggKey].rev += sell; otherAgg[aggKey].marg += margin; }
+                    }
+                }
+            });
+
+            const totalRev = storeTotalRev + otherTotalRev;
+            const totalMarg = storeTotalMarg + otherTotalMarg;
+            const totalRate = totalRev > 0 ? (totalMarg / totalRev) * 100 : 0;
+            const storeRate = storeTotalRev > 0 ? (storeTotalMarg / storeTotalRev) * 100 : 0;
+            const otherRate = otherTotalRev > 0 ? (otherTotalMarg / otherTotalRev) * 100 : 0;
+
+            let titleText = '통합 요약';
+            if (yearVal !== 'all' && monthVal === 'all') titleText = `${yearVal}년 통합 요약`;
+            else if (yearVal !== 'all' && monthVal !== 'all') titleText = `${yearVal}년 ${parseInt(monthVal)}월 통합 요약`;
+            else if (yearVal === 'all' && monthVal !== 'all') titleText = `전체 년도 ${parseInt(monthVal)}월 통합 요약`;
+            document.getElementById('main-summary-title').innerText = titleText;
+
+            document.getElementById('total-revenue').innerText = `₩${formatNumber(totalRev)}`;
+            document.getElementById('total-margin').innerText = `₩${formatNumber(totalMarg)}`;
+            document.getElementById('total-avg-margin-rate').innerText = `${totalRate.toFixed(1)}%`;
+
+            document.getElementById('store-summary-rev').innerText = `₩${formatNumber(storeTotalRev)}`;
+            document.getElementById('store-summary-marg').innerText = `₩${formatNumber(storeTotalMarg)}`;
+            document.getElementById('store-summary-rate').innerText = `${storeRate.toFixed(1)}%`;
+
+            document.getElementById('other-summary-rev').innerText = `₩${formatNumber(otherTotalRev)}`;
+            document.getElementById('other-summary-marg').innerText = `₩${formatNumber(otherTotalMarg)}`;
+            document.getElementById('other-summary-rate').innerText = `${otherRate.toFixed(1)}%`;
+
+            const displayLabels = chartLabels.map(val => isYearGrouping ? `${val}년` : `${parseInt(val)}월`);
+            const storeRevArr = chartLabels.map(k => storeAgg[k].rev);
+            const storeMargArr = chartLabels.map(k => storeAgg[k].marg);
+            const otherRevArr = chartLabels.map(k => otherAgg[k].rev);
+            const otherMargArr = chartLabels.map(k => otherAgg[k].marg);
+            const chartTitleSuffix = isYearGrouping ? '(년도별 종합)' : `(${yearVal}년 월별 종합)`;
+
+            const isMobile = window.innerWidth < 768;
+            const titleFontSize = isMobile ? 12 : 14;
+            const labelFontSize = isMobile ? 9 : 11;
+
+            Chart.defaults.font.size = isMobile ? 10 : 12;
+            
+            // 데이터 레이블 옵션 공통 설정
+            const dataLabelsConfig = {
+                color: '#444',
+                anchor: 'end',
+                align: 'top',
+                font: { size: labelFontSize, weight: 'bold' },
+                formatter: function(value) {
+                    return value > 0 ? formatNumber(value) : '';
+                }
+            };
+
+            const storeCtx = document.getElementById('storeChart').getContext('2d');
+            if(storeChartInstance) storeChartInstance.destroy();
+            storeChartInstance = new Chart(storeCtx, {
+                type: 'bar',
+                data: {
+                    labels: displayLabels,
+                    datasets: [
+                        { label: '예상 마진', data: storeMargArr, backgroundColor: '#4CAF50', borderRadius: 4 },
+                        { label: '예상 매출', data: storeRevArr, backgroundColor: '#81C784', borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    layout: { padding: { top: 25 } }, // 레이블이 잘리지 않도록 상단 여백 추가
+                    plugins: { 
+                        legend: { position: 'top', labels: { boxWidth: 12 } }, 
+                        title: { display: true, text: `스마트스토어 ${chartTitleSuffix}`, font: { size: titleFontSize } },
+                        datalabels: dataLabelsConfig
+                    }
+                }
+            });
+
+            const otherCtx = document.getElementById('otherChart').getContext('2d');
+            if(otherChartInstance) otherChartInstance.destroy();
+            otherChartInstance = new Chart(otherCtx, {
+                type: 'bar',
+                data: {
+                    labels: displayLabels,
+                    datasets: [
+                        { label: '예상 마진', data: otherMargArr, backgroundColor: '#2196F3', borderRadius: 4 },
+                        { label: '예상 매출', data: otherRevArr, backgroundColor: '#64B5F6', borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    layout: { padding: { top: 25 } }, // 레이블이 잘리지 않도록 상단 여백 추가
+                    plugins: { 
+                        legend: { position: 'top', labels: { boxWidth: 12 } }, 
+                        title: { display: true, text: `타사이트 ${chartTitleSuffix}`, font: { size: titleFontSize } },
+                        datalabels: dataLabelsConfig
+                    }
+                }
+            });
+        }
+
+        window.addEventListener('resize', () => {
+            if(document.getElementById('dashboard').classList.contains('active')){
+                updateDashboard();
+            }
+        });
+    </script>
+</body>
+</html>
