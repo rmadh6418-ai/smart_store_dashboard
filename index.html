@@ -26,11 +26,14 @@
         #app-container { display: none; padding: 10px; max-width: 1400px; margin: 0 auto; }
         
         .header { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
-        .header-title-container { display: flex; justify-content: space-between; align-items: center; }
+        .header-title-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         .header h2 { margin: 0; font-size: 18px; }
-        .logout-btn { padding: 8px 12px; cursor: pointer; background: #e0e0e0; border: none; border-radius: 4px; font-size: 13px; }
         
-        /* 필터 컨트롤 (모바일 친화적) */
+        .header-btns { display: flex; gap: 8px; }
+        .btn-secondary { padding: 8px 12px; cursor: pointer; background: #e0e0e0; border: none; border-radius: 4px; font-size: 13px; font-weight: bold; color: #333; }
+        .btn-secondary:hover { background: #d0d0d0; }
+        
+        /* 필터 컨트롤 */
         .filter-controls { display: flex; gap: 8px; flex-wrap: wrap; background: #fff; padding: 10px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .filter-controls select { flex: 1; min-width: 100px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-weight: bold; font-size: 14px; background-color: #fff; }
         
@@ -69,7 +72,7 @@
         
         /* 테이블 (모바일 대응) */
         .table-wrapper { width: 100%; overflow-x: auto; margin-top: 10px; -webkit-overflow-scrolling: touch; border: 1px solid #eee; border-radius: 4px; }
-        table { width: 100%; min-width: 900px; border-collapse: collapse; white-space: nowrap; font-size: 12px; }
+        table { width: 100%; min-width: 1000px; border-collapse: collapse; white-space: nowrap; font-size: 12px; }
         th, td { border: 1px solid var(--border-color); padding: 8px 6px; text-align: center; }
         th { background-color: #f8f9fa; font-weight: bold; position: sticky; top: 0; z-index: 10; }
         
@@ -98,7 +101,7 @@
     <!-- 로그인 화면 -->
     <div id="login-screen">
         <h2>🔒 관리자 로그인</h2>
-        <p style="font-size: 12px; color: #aaa;">비밀번호를 입력하세요.</p>
+        <p style="font-size: 12px; color: #aaa;" id="login-hint">비밀번호를 입력하세요. (초기: 0129)</p>
         <input type="password" id="pwd-input" placeholder="비밀번호" onkeypress="if(event.keyCode==13) checkPassword()">
         <button onclick="checkPassword()">접속하기</button>
     </div>
@@ -109,7 +112,10 @@
         <div class="header">
             <div class="header-title-container">
                 <h2>📦 통합 관리 대시보드</h2>
-                <button class="logout-btn" onclick="logout()">로그아웃</button>
+                <div class="header-btns">
+                    <button class="btn-secondary" onclick="changePassword()">🔑 비밀번호 변경</button>
+                    <button class="btn-secondary" onclick="logout()">로그아웃</button>
+                </div>
             </div>
             
             <!-- 통합 필터 컨트롤 -->
@@ -197,7 +203,7 @@
         <!-- 2. 등록제품(스토어) 탭 -->
         <div id="products" class="tab-content">
             <button class="btn-add" onclick="addProduct()">+ 스토어 제품 추가</button>
-            <span class="notice-text">* 추가 시 위 필터의 년/월이 기본 입력됩니다. 수수료 2.73%</span>
+            <span class="notice-text">* 스토어 수수료율도 자유롭게 수정 가능합니다. (기본 2.73%)</span>
             <div class="table-wrapper">
                 <table id="products-table">
                     <thead>
@@ -209,7 +215,8 @@
                             <th style="min-width: 80px;">공급가</th>
                             <th style="min-width: 80px;">매출액</th>
                             <th style="min-width: 70px;">택배비</th>
-                            <th style="min-width: 70px;">수수료</th>
+                            <th style="min-width: 60px;">수수료(%)</th>
+                            <th style="min-width: 70px;">수수료액</th>
                             <th style="min-width: 80px;">마진</th>
                             <th style="min-width: 60px;">마진율</th>
                             <th style="min-width: 60px;">관리</th>
@@ -279,19 +286,26 @@
         let otherProductsData = JSON.parse(localStorage.getItem('ss_other_products')) || [];
         let sourcingData = JSON.parse(localStorage.getItem('ss_sourcing')) || [];
         
-        const STORE_COMMISSION_RATE = 0.0273;
         let storeChartInstance = null;
         let otherChartInstance = null;
+
+        // 비밀번호 비트 해시 생성 함수 (보안용)
+        function generateHash(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = ((hash << 5) - hash) + str.charCodeAt(i);
+                hash |= 0;
+            }
+            return hash.toString() + "_" + str.length;
+        }
 
         // 로그인
         function checkPassword() {
             const pwd = document.getElementById('pwd-input').value;
-            let hash = 0;
-            for (let i = 0; i < pwd.length; i++) {
-                hash = ((hash << 5) - hash) + pwd.charCodeAt(i);
-                hash |= 0;
-            }
-            if (hash === 1478664 && pwd.length === 4) { 
+            // 로컬 스토리지에 저장된 해시가 없으면 '0129'의 해시를 기본값으로 사용
+            const expectedHash = localStorage.getItem('ss_pwd_hash') || '1478664_4'; 
+            
+            if (generateHash(pwd) === expectedHash) { 
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('app-container').style.display = 'block';
                 populateYearFilter();
@@ -299,6 +313,36 @@
             } else {
                 alert('비밀번호가 틀렸습니다.');
             }
+        }
+
+        // 비밀번호 변경 기능
+        function changePassword() {
+            const currentPwd = prompt("현재 비밀번호를 입력하세요.");
+            if (currentPwd === null) return; // 취소 누를 경우
+            
+            const expectedHash = localStorage.getItem('ss_pwd_hash') || '1478664_4';
+            
+            if (generateHash(currentPwd) !== expectedHash) {
+                alert("현재 비밀번호가 일치하지 않습니다.");
+                return;
+            }
+            
+            const newPwd = prompt("새로운 비밀번호를 입력하세요.");
+            if (newPwd === null) return;
+            if (newPwd.trim() === "") {
+                alert("비밀번호는 공백일 수 없습니다.");
+                return;
+            }
+            
+            const confirmPwd = prompt("새로운 비밀번호를 한번 더 입력하세요.");
+            if (newPwd !== confirmPwd) {
+                alert("새 비밀번호가 일치하지 않습니다.");
+                return;
+            }
+            
+            // 새 비밀번호 해시 저장
+            localStorage.setItem('ss_pwd_hash', generateHash(newPwd));
+            alert("비밀번호가 성공적으로 변경되었습니다.");
         }
 
         function logout() {
@@ -385,6 +429,7 @@
             renderAll();
         }
 
+        // 스토어 제품 렌더링 (수수료 수정 기능 추가됨)
         function renderProducts() {
             const tbody = document.querySelector('#products-table tbody');
             tbody.innerHTML = '';
@@ -394,7 +439,9 @@
                 const buyPrice = Number(item.buyPrice) || 0;
                 const sellPrice = Number(item.sellPrice) || 0;
                 const shipping = Number(item.shipping) || 0;
-                const commission = sellPrice * STORE_COMMISSION_RATE;
+                // 이전 데이터에 commRate가 없을 경우 기본값 2.73 설정
+                const commRate = item.commRate !== undefined ? Number(item.commRate) : 2.73;
+                const commission = sellPrice * (commRate / 100);
                 const margin = sellPrice - buyPrice - shipping - commission;
                 const marginRate = sellPrice > 0 ? (margin / sellPrice) * 100 : 0;
                 const statusClass = item.status === '재고' ? 'status-instock' : 'status-soldout';
@@ -413,6 +460,7 @@
                     <td><input type="number" value="${buyPrice}" onchange="updateCell('products', ${index}, 'buyPrice', this)"></td>
                     <td><input type="number" value="${sellPrice}" onchange="updateCell('products', ${index}, 'sellPrice', this)"></td>
                     <td><input type="number" value="${shipping}" onchange="updateCell('products', ${index}, 'shipping', this)"></td>
+                    <td><input type="number" value="${commRate}" step="0.01" onchange="updateCell('products', ${index}, 'commRate', this)"></td>
                     <td style="color:#666; font-size:11px;">₩${formatNumber(commission)}</td>
                     <td style="font-weight:bold; color:${margin > 0 ? 'var(--primary-color)' : '#f44336'};">₩${formatNumber(margin)}</td>
                     <td style="font-weight:bold; color:${marginRate > 30 ? 'var(--primary-color)' : (marginRate > 0 ? 'orange' : '#f44336')};">${marginRate.toFixed(1)}%</td>
@@ -421,9 +469,10 @@
                 tbody.appendChild(tr);
             });
         }
-        function addProduct() { productsData.push({ status: '재고', salesDate: getFilterSafeDate(), id: '', name: '새 상품', buyPrice: 0, sellPrice: 0, shipping: 3000 }); populateYearFilter(); renderAll(); }
+        function addProduct() { productsData.push({ status: '재고', salesDate: getFilterSafeDate(), id: '', name: '새 상품', buyPrice: 0, sellPrice: 0, shipping: 3000, commRate: 2.73 }); populateYearFilter(); renderAll(); }
         function deleteProduct(index) { if(confirm('삭제하시겠습니까?')) { productsData.splice(index, 1); saveData(); renderAll(); } }
 
+        // 타사이트 제품 렌더링
         function renderOtherProducts() {
             const tbody = document.querySelector('#other-products-table tbody');
             tbody.innerHTML = '';
@@ -433,7 +482,7 @@
                 const buyPrice = Number(item.buyPrice) || 0;
                 const sellPrice = Number(item.sellPrice) || 0;
                 const shipping = Number(item.shipping) || 0;
-                const commRate = Number(item.commRate) || 2.73;
+                const commRate = item.commRate !== undefined ? Number(item.commRate) : 2.73;
                 const commission = sellPrice * (commRate / 100);
                 const margin = sellPrice - buyPrice - shipping - commission;
                 const marginRate = sellPrice > 0 ? (margin / sellPrice) * 100 : 0;
@@ -530,7 +579,8 @@
                 const sell = Number(item.sellPrice) || 0;
                 const buy = Number(item.buyPrice) || 0;
                 const ship = Number(item.shipping) || 0;
-                const comm = sell * STORE_COMMISSION_RATE;
+                const commRate = item.commRate !== undefined ? Number(item.commRate) : 2.73;
+                const comm = sell * (commRate / 100);
                 const margin = sell > 0 ? (sell - buy - ship - comm) : 0;
 
                 if (sell > 0 && !item.name.includes('새 상품')) {
@@ -552,7 +602,7 @@
                 const sell = Number(item.sellPrice) || 0;
                 const buy = Number(item.buyPrice) || 0;
                 const ship = Number(item.shipping) || 0;
-                const commRate = Number(item.commRate) || 2.73;
+                const commRate = item.commRate !== undefined ? Number(item.commRate) : 2.73;
                 const comm = sell * (commRate / 100);
                 const margin = sell > 0 ? (sell - buy - ship - comm) : 0;
 
@@ -626,7 +676,7 @@
                 },
                 options: {
                     responsive: true, maintainAspectRatio: false,
-                    layout: { padding: { top: 25 } }, // 레이블이 잘리지 않도록 상단 여백 추가
+                    layout: { padding: { top: 25 } }, 
                     plugins: { 
                         legend: { position: 'top', labels: { boxWidth: 12 } }, 
                         title: { display: true, text: `스마트스토어 ${chartTitleSuffix}`, font: { size: titleFontSize } },
@@ -648,7 +698,7 @@
                 },
                 options: {
                     responsive: true, maintainAspectRatio: false,
-                    layout: { padding: { top: 25 } }, // 레이블이 잘리지 않도록 상단 여백 추가
+                    layout: { padding: { top: 25 } }, 
                     plugins: { 
                         legend: { position: 'top', labels: { boxWidth: 12 } }, 
                         title: { display: true, text: `타사이트 ${chartTitleSuffix}`, font: { size: titleFontSize } },
