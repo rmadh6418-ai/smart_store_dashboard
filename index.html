@@ -22,6 +22,9 @@
         /* 대시보드 레이아웃 */
         #app-container { display: none; padding: 20px; max-width: 1400px; margin: 0 auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header-controls { display: flex; gap: 15px; align-items: center; }
+        .header-controls select { padding: 5px 10px; border-radius: 5px; border: 1px solid #ccc; font-weight: bold; }
+        
         .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
         .nav-tabs button { padding: 10px 20px; border: none; background-color: #e0e0e0; cursor: pointer; border-radius: 5px; font-weight: bold; }
         .nav-tabs button.active { background-color: var(--primary-color); color: white; }
@@ -37,7 +40,8 @@
         .card p { margin: 0; font-size: 24px; font-weight: bold; color: #2c3e50; }
         
         /* 차트 영역 */
-        .chart-container { width: 100%; height: 400px; margin-top: 20px; }
+        .charts-wrapper { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px; }
+        .chart-container { flex: 1; min-width: 400px; height: 350px; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #eee; }
         
         /* 테이블 스타일 */
         .table-wrapper { overflow-x: auto; margin-top: 15px; }
@@ -69,7 +73,13 @@
     <div id="app-container">
         <div class="header">
             <h2>📦 스토어 통합 관리 대시보드</h2>
-            <button onclick="logout()" style="padding: 5px 10px; cursor: pointer;">로그아웃</button>
+            <div class="header-controls">
+                <select id="yearFilter" onchange="renderAll()">
+                    <option value="all">전체 년도</option>
+                    <!-- 년도 옵션은 JS에서 자동 생성 -->
+                </select>
+                <button onclick="logout()" style="padding: 5px 10px; cursor: pointer; background: #e0e0e0; border: none; border-radius: 4px;">로그아웃</button>
+            </div>
         </div>
         
         <div class="nav-tabs">
@@ -95,8 +105,14 @@
                     <p id="avg-margin-rate">0%</p>
                 </div>
             </div>
-            <div class="chart-container">
-                <canvas id="marginChart"></canvas>
+            <!-- 스토어와 타사이트 그래프 분리 -->
+            <div class="charts-wrapper">
+                <div class="chart-container">
+                    <canvas id="storeChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="otherChart"></canvas>
+                </div>
             </div>
         </div>
 
@@ -109,6 +125,7 @@
                     <thead>
                         <tr>
                             <th>재고상태</th>
+                            <th>판매일자</th>
                             <th>상품번호</th>
                             <th>제품명</th>
                             <th>공급가(내지출)</th>
@@ -134,6 +151,7 @@
                     <thead>
                         <tr>
                             <th>재고상태</th>
+                            <th>판매일자</th>
                             <th>상품번호</th>
                             <th>제품명</th>
                             <th>공급가(내지출)</th>
@@ -181,7 +199,8 @@
         let sourcingData = JSON.parse(localStorage.getItem('ss_sourcing')) || [];
         
         const STORE_COMMISSION_RATE = 0.0273; // 네이버 수수료 2.73%
-        let marginChartInstance = null;
+        let storeChartInstance = null;
+        let otherChartInstance = null;
 
         // 로그인 로직 (비트 연산 적용)
         function checkPassword() {
@@ -198,10 +217,8 @@
             if (hash === 1478664 && pwd.length === 4) { 
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('app-container').style.display = 'block';
-                renderProducts();
-                renderOtherProducts();
-                renderSourcing();
-                updateDashboard();
+                populateYearFilter();
+                renderAll();
             } else {
                 alert('비밀번호가 틀렸습니다.');
             }
@@ -220,12 +237,49 @@
             
             document.getElementById(tabId).classList.add('active');
             event.target.classList.add('active');
-            
-            if(tabId === 'dashboard') updateDashboard();
         }
 
         function formatNumber(num) {
             return Number(Math.round(num)).toLocaleString('ko-KR');
+        }
+        
+        function getTodayDate() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        // --- 년도 필터 생성 및 전체 렌더링 ---
+        function populateYearFilter() {
+            const years = new Set();
+            const currentYear = new Date().getFullYear().toString();
+            years.add(currentYear);
+            
+            const extractYear = (dateStr) => dateStr ? dateStr.substring(0, 4) : null;
+            
+            productsData.forEach(item => { if(extractYear(item.salesDate)) years.add(extractYear(item.salesDate)); });
+            otherProductsData.forEach(item => { if(extractYear(item.salesDate)) years.add(extractYear(item.salesDate)); });
+            sourcingData.forEach(item => { if(extractYear(item.date)) years.add(extractYear(item.date)); });
+            
+            const filterSelect = document.getElementById('yearFilter');
+            // 기존 옵션(전체) 유지하고 새로 추가
+            filterSelect.innerHTML = '<option value="all">전체 년도</option>';
+            
+            Array.from(years).sort().reverse().forEach(year => {
+                filterSelect.innerHTML += `<option value="${year}">${year}년</option>`;
+            });
+        }
+
+        function renderAll() {
+            renderProducts();
+            renderOtherProducts();
+            renderSourcing();
+            updateDashboard();
+        }
+
+        function checkYearFilter(dateString) {
+            const selectedYear = document.getElementById('yearFilter').value;
+            if (selectedYear === 'all') return true;
+            if (!dateString) return false;
+            return dateString.substring(0, 4) === selectedYear;
         }
 
         // --- 등록제품(스토어) 관리 ---
@@ -234,6 +288,8 @@
             tbody.innerHTML = '';
             
             productsData.forEach((item, index) => {
+                if (!checkYearFilter(item.salesDate)) return; // 년도 필터링
+                
                 const buyPrice = Number(item.buyPrice) || 0;
                 const sellPrice = Number(item.sellPrice) || 0;
                 const shipping = Number(item.shipping) || 0;
@@ -250,6 +306,7 @@
                             <option value="품절" ${item.status === '품절' ? 'selected' : ''}>품절</option>
                         </select>
                     </td>
+                    <td><input type="date" value="${item.salesDate || ''}" onchange="updateProduct(${index}, 'salesDate', this.value)"></td>
                     <td><input type="text" value="${item.id}" onchange="updateProduct(${index}, 'id', this.value)"></td>
                     <td><input type="text" value="${item.name}" onchange="updateProduct(${index}, 'name', this.value)"></td>
                     <td><input type="number" value="${buyPrice}" onchange="updateProduct(${index}, 'buyPrice', this.value)"></td>
@@ -266,19 +323,20 @@
         }
 
         function addProduct() {
-            productsData.push({ status: '재고', id: '', name: '새 상품', buyPrice: 0, sellPrice: 0, shipping: 3000 });
-            renderProducts();
+            productsData.push({ status: '재고', salesDate: getTodayDate(), id: '', name: '새 상품', buyPrice: 0, sellPrice: 0, shipping: 3000 });
+            populateYearFilter(); // 혹시 년도가 바뀌었을 수 있으므로 갱신
+            renderAll();
         }
 
         function updateProduct(index, key, value) {
             productsData[index][key] = value;
-            renderProducts();
+            renderAll();
         }
 
         function deleteProduct(index) {
             if(confirm('이 항목을 삭제하시겠습니까?')) {
                 productsData.splice(index, 1);
-                renderProducts();
+                renderAll();
             }
         }
 
@@ -288,6 +346,8 @@
             tbody.innerHTML = '';
             
             otherProductsData.forEach((item, index) => {
+                if (!checkYearFilter(item.salesDate)) return; // 년도 필터링
+                
                 const buyPrice = Number(item.buyPrice) || 0;
                 const sellPrice = Number(item.sellPrice) || 0;
                 const shipping = Number(item.shipping) || 0;
@@ -305,6 +365,7 @@
                             <option value="품절" ${item.status === '품절' ? 'selected' : ''}>품절</option>
                         </select>
                     </td>
+                    <td><input type="date" value="${item.salesDate || ''}" onchange="updateOtherProduct(${index}, 'salesDate', this.value)"></td>
                     <td><input type="text" value="${item.id}" onchange="updateOtherProduct(${index}, 'id', this.value)"></td>
                     <td><input type="text" value="${item.name}" onchange="updateOtherProduct(${index}, 'name', this.value)"></td>
                     <td><input type="number" value="${buyPrice}" onchange="updateOtherProduct(${index}, 'buyPrice', this.value)"></td>
@@ -322,19 +383,20 @@
         }
 
         function addOtherProduct() {
-            otherProductsData.push({ status: '재고', id: '', name: '새 상품(타사이트)', buyPrice: 0, sellPrice: 0, shipping: 3000, commRate: 2.73 });
-            renderOtherProducts();
+            otherProductsData.push({ status: '재고', salesDate: getTodayDate(), id: '', name: '새 상품', buyPrice: 0, sellPrice: 0, shipping: 3000, commRate: 2.73 });
+            populateYearFilter();
+            renderAll();
         }
 
         function updateOtherProduct(index, key, value) {
             otherProductsData[index][key] = value;
-            renderOtherProducts();
+            renderAll();
         }
 
         function deleteOtherProduct(index) {
             if(confirm('이 항목을 삭제하시겠습니까?')) {
                 otherProductsData.splice(index, 1);
-                renderOtherProducts();
+                renderAll();
             }
         }
 
@@ -344,6 +406,8 @@
             tbody.innerHTML = '';
             
             sourcingData.forEach((item, index) => {
+                if (!checkYearFilter(item.date)) return; // 년도 필터링
+                
                 const qty = Number(item.qty) || 0;
                 const unitPrice = Number(item.unitPrice) || 0;
                 const total = qty * unitPrice;
@@ -365,20 +429,20 @@
         }
 
         function addSourcing() {
-            const today = new Date().toISOString().split('T')[0];
-            sourcingData.push({ date: today, vendor: '', name: '새 사입품', qty: 1, unitPrice: 0, note: '' });
-            renderSourcing();
+            sourcingData.push({ date: getTodayDate(), vendor: '', name: '새 사입품', qty: 1, unitPrice: 0, note: '' });
+            populateYearFilter();
+            renderAll();
         }
 
         function updateSourcing(index, key, value) {
             sourcingData[index][key] = value;
-            renderSourcing();
+            renderAll();
         }
 
         function deleteSourcing(index) {
             if(confirm('이 사입 내역을 삭제하시겠습니까?')) {
                 sourcingData.splice(index, 1);
-                renderSourcing();
+                renderAll();
             }
         }
 
@@ -392,12 +456,15 @@
         function updateDashboard() {
             let totalRev = 0;
             let totalMarg = 0;
-            let labels = [];
-            let marginData = [];
-            let sellData = [];
+            
+            // 스토어 데이터
+            let storeLabels = [];
+            let storeMarginData = [];
+            let storeSellData = [];
 
-            // 스토어 제품 집계
             productsData.forEach(item => {
+                if (!checkYearFilter(item.salesDate)) return;
+                
                 const buy = Number(item.buyPrice) || 0;
                 const sell = Number(item.sellPrice) || 0;
                 const ship = Number(item.shipping) || 0;
@@ -407,14 +474,20 @@
                 if(sell > 0 && !item.name.includes('새 상품')) {
                     totalRev += sell;
                     totalMarg += margin;
-                    labels.push(item.name.substring(0, 8) + '(스토어)');
-                    marginData.push(margin);
-                    sellData.push(sell);
+                    storeLabels.push(item.name.substring(0, 10));
+                    storeMarginData.push(margin);
+                    storeSellData.push(sell);
                 }
             });
 
-            // 타사이트 제품 집계
+            // 타사이트 데이터
+            let otherLabels = [];
+            let otherMarginData = [];
+            let otherSellData = [];
+
             otherProductsData.forEach(item => {
+                if (!checkYearFilter(item.salesDate)) return;
+                
                 const buy = Number(item.buyPrice) || 0;
                 const sell = Number(item.sellPrice) || 0;
                 const ship = Number(item.shipping) || 0;
@@ -425,48 +498,53 @@
                 if(sell > 0 && !item.name.includes('새 상품')) {
                     totalRev += sell;
                     totalMarg += margin;
-                    labels.push(item.name.substring(0, 8) + '(타사이트)');
-                    marginData.push(margin);
-                    sellData.push(sell);
+                    otherLabels.push(item.name.substring(0, 10));
+                    otherMarginData.push(margin);
+                    otherSellData.push(sell);
                 }
             });
 
+            // 요약 카드 업데이트
             const avgRate = totalRev > 0 ? (totalMarg / totalRev) * 100 : 0;
-
             document.getElementById('total-revenue').innerText = `₩${formatNumber(totalRev)}`;
             document.getElementById('total-margin').innerText = `₩${formatNumber(totalMarg)}`;
             document.getElementById('avg-margin-rate').innerText = `${avgRate.toFixed(1)}%`;
 
-            // Chart.js 렌더링
-            const ctx = document.getElementById('marginChart').getContext('2d');
-            if(marginChartInstance) marginChartInstance.destroy();
+            // 1. 스토어 차트 렌더링
+            const storeCtx = document.getElementById('storeChart').getContext('2d');
+            if(storeChartInstance) storeChartInstance.destroy();
             
-            marginChartInstance = new Chart(ctx, {
+            storeChartInstance = new Chart(storeCtx, {
                 type: 'bar',
                 data: {
-                    labels: labels,
+                    labels: storeLabels,
                     datasets: [
-                        {
-                            label: '제품별 마진 (₩)',
-                            data: marginData,
-                            backgroundColor: '#4CAF50',
-                            borderRadius: 5
-                        },
-                        {
-                            label: '제품별 판매가 (₩)',
-                            data: sellData,
-                            backgroundColor: '#2196F3',
-                            borderRadius: 5 // hidden: true 속성을 제거하여 기본적으로 표시되게 함(가운데 줄 그어짐 방지)
-                        }
+                        { label: '스토어 마진 (₩)', data: storeMarginData, backgroundColor: '#4CAF50', borderRadius: 4 },
+                        { label: '스토어 판매가 (₩)', data: storeSellData, backgroundColor: '#81C784', borderRadius: 4 }
                     ]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'top' },
-                        title: { display: true, text: '등록 제품별 통합 마진 현황' }
-                    }
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' }, title: { display: true, text: '스마트스토어 제품별 현황' } }
+                }
+            });
+
+            // 2. 타사이트 차트 렌더링
+            const otherCtx = document.getElementById('otherChart').getContext('2d');
+            if(otherChartInstance) otherChartInstance.destroy();
+            
+            otherChartInstance = new Chart(otherCtx, {
+                type: 'bar',
+                data: {
+                    labels: otherLabels,
+                    datasets: [
+                        { label: '타사이트 마진 (₩)', data: otherMarginData, backgroundColor: '#2196F3', borderRadius: 4 },
+                        { label: '타사이트 판매가 (₩)', data: otherSellData, backgroundColor: '#64B5F6', borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' }, title: { display: true, text: '타사이트 제품별 현황' } }
                 }
             });
         }
