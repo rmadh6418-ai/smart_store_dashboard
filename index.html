@@ -66,7 +66,8 @@
         
         /* 차트 영역 */
         .charts-wrapper { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
-        @media (min-width: 768px) { .charts-wrapper { flex-direction: row; } }
+        .charts-row { display: flex; flex-direction: column; gap: 15px; }
+        @media (min-width: 768px) { .charts-row { flex-direction: row; } }
         .chart-container { flex: 1; width: 100%; height: 280px; background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #eee; }
         @media (min-width: 768px) { .chart-container { height: 350px; } }
         
@@ -190,12 +191,20 @@
                 </div>
             </div>
 
+            <!-- 그래프 영역 -->
             <div class="charts-wrapper">
+                <!-- 전체 통합 그래프 (맨 위에 크게 표시) -->
                 <div class="chart-container">
-                    <canvas id="storeChart"></canvas>
+                    <canvas id="combinedChart"></canvas>
                 </div>
-                <div class="chart-container">
-                    <canvas id="otherChart"></canvas>
+                <!-- 스토어 / 타사이트 분리 그래프 (나란히 표시) -->
+                <div class="charts-row">
+                    <div class="chart-container">
+                        <canvas id="storeChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="otherChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -286,6 +295,7 @@
         let otherProductsData = JSON.parse(localStorage.getItem('ss_other_products')) || [];
         let sourcingData = JSON.parse(localStorage.getItem('ss_sourcing')) || [];
         
+        let combinedChartInstance = null;
         let storeChartInstance = null;
         let otherChartInstance = null;
 
@@ -429,7 +439,7 @@
             renderAll();
         }
 
-        // 스토어 제품 렌더링 (수수료 수정 기능 추가됨)
+        // 스토어 제품 렌더링
         function renderProducts() {
             const tbody = document.querySelector('#products-table tbody');
             tbody.innerHTML = '';
@@ -439,7 +449,6 @@
                 const buyPrice = Number(item.buyPrice) || 0;
                 const sellPrice = Number(item.sellPrice) || 0;
                 const shipping = Number(item.shipping) || 0;
-                // 이전 데이터에 commRate가 없을 경우 기본값 2.73 설정
                 const commRate = item.commRate !== undefined ? Number(item.commRate) : 2.73;
                 const commission = sellPrice * (commRate / 100);
                 const margin = sellPrice - buyPrice - shipping - commission;
@@ -640,10 +649,16 @@
             document.getElementById('other-summary-rate').innerText = `${otherRate.toFixed(1)}%`;
 
             const displayLabels = chartLabels.map(val => isYearGrouping ? `${val}년` : `${parseInt(val)}월`);
+            
             const storeRevArr = chartLabels.map(k => storeAgg[k].rev);
             const storeMargArr = chartLabels.map(k => storeAgg[k].marg);
             const otherRevArr = chartLabels.map(k => otherAgg[k].rev);
             const otherMargArr = chartLabels.map(k => otherAgg[k].marg);
+            
+            // 통합 차트용 데이터 합산
+            const combinedRevArr = storeRevArr.map((val, idx) => val + otherRevArr[idx]);
+            const combinedMargArr = storeMargArr.map((val, idx) => val + otherMargArr[idx]);
+
             const chartTitleSuffix = isYearGrouping ? '(년도별 종합)' : `(${yearVal}년 월별 종합)`;
 
             const isMobile = window.innerWidth < 768;
@@ -663,6 +678,30 @@
                 }
             };
 
+            // 1. 전체 통합 차트 (보라색/주황색 테마)
+            const combinedCtx = document.getElementById('combinedChart').getContext('2d');
+            if(combinedChartInstance) combinedChartInstance.destroy();
+            combinedChartInstance = new Chart(combinedCtx, {
+                type: 'bar',
+                data: {
+                    labels: displayLabels,
+                    datasets: [
+                        { label: '통합 예상 마진', data: combinedMargArr, backgroundColor: '#9C27B0', borderRadius: 4 },
+                        { label: '통합 예상 매출', data: combinedRevArr, backgroundColor: '#CE93D8', borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    layout: { padding: { top: 25 } }, 
+                    plugins: { 
+                        legend: { position: 'top', labels: { boxWidth: 12 } }, 
+                        title: { display: true, text: `전체 통합 현황 ${chartTitleSuffix}`, font: { size: titleFontSize + 2 } },
+                        datalabels: dataLabelsConfig
+                    }
+                }
+            });
+
+            // 2. 스토어 차트
             const storeCtx = document.getElementById('storeChart').getContext('2d');
             if(storeChartInstance) storeChartInstance.destroy();
             storeChartInstance = new Chart(storeCtx, {
@@ -670,8 +709,8 @@
                 data: {
                     labels: displayLabels,
                     datasets: [
-                        { label: '예상 마진', data: storeMargArr, backgroundColor: '#4CAF50', borderRadius: 4 },
-                        { label: '예상 매출', data: storeRevArr, backgroundColor: '#81C784', borderRadius: 4 }
+                        { label: '스토어 예상 마진', data: storeMargArr, backgroundColor: '#4CAF50', borderRadius: 4 },
+                        { label: '스토어 예상 매출', data: storeRevArr, backgroundColor: '#81C784', borderRadius: 4 }
                     ]
                 },
                 options: {
@@ -685,6 +724,7 @@
                 }
             });
 
+            // 3. 타사이트 차트
             const otherCtx = document.getElementById('otherChart').getContext('2d');
             if(otherChartInstance) otherChartInstance.destroy();
             otherChartInstance = new Chart(otherCtx, {
@@ -692,8 +732,8 @@
                 data: {
                     labels: displayLabels,
                     datasets: [
-                        { label: '예상 마진', data: otherMargArr, backgroundColor: '#2196F3', borderRadius: 4 },
-                        { label: '예상 매출', data: otherRevArr, backgroundColor: '#64B5F6', borderRadius: 4 }
+                        { label: '타사이트 예상 마진', data: otherMargArr, backgroundColor: '#2196F3', borderRadius: 4 },
+                        { label: '타사이트 예상 매출', data: otherRevArr, backgroundColor: '#64B5F6', borderRadius: 4 }
                     ]
                 },
                 options: {
